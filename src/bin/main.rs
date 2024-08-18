@@ -185,6 +185,7 @@ mod test {
     use tesseract::Tesseract;
     use wfinfo::ocr::detect_theme;
     use wfinfo::ocr::extract_parts;
+    use wfinfo::ocr::inventory_image_to_inventory_names;
     use wfinfo::testing::Label;
 
     use super::*;
@@ -218,6 +219,26 @@ mod test {
             items[3].expect("Didn't find an item?").drop_name,
             "Harrow Prime Systems Blueprint"
         );
+    }
+
+    #[test]
+    fn single_image_inventory() {
+        let db = Database::load_from_file(None, None);
+        let image = Reader::open("test-images/inventory.png")
+            .unwrap()
+            .decode()
+            .unwrap();
+        let text = inventory_image_to_inventory_names(image, None);
+        println!("text before normalizing: {:#?}", text);
+        let text = text.iter().map(|s| normalize_string(s)).collect::<Vec<_>>();
+        println!("text after normalizing: {:#?}", text.iter());
+        let items: Vec<_> = text.iter().map(|s| db.find_item(&s, None)).collect();
+        println!("items: {:#?}", items);
+
+        assert_eq!(
+            items[0].expect("Didn't find an item?").drop_name,
+            "Octavia Prime Systems Blueprint"
+        )
     }
 
     // #[test]
