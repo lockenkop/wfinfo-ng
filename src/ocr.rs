@@ -16,12 +16,12 @@ const PIXEL_REWARD_LINE_HEIGHT: f32 = 48.0;
 
 const PIXEL_INVENTORY_WIDTH: f32 = 1224.0;
 const PIXEL_INVENTORY_HEIGHT: f32 = 770.0;
-const PIXEL_INVENTORY_BLOCK: f32 = 169.0; // Inventory blocks are square
-const PIXEL_INVENTORY_YDISPLAY: f32 = 199.0;
-const PIXEL_INVENTORY_XDISPLAY: f32 = 76.0;
+const PIXEL_INVENTORY_BLOCK: f32 = 201.0; // Inventory blocks are square
+const PIXEL_INVENTORY_YDISPLAY: f32 = 236.0;
+const PIXEL_INVENTORY_XDISPLAY: f32 = 115.0;
 const PIXEL_INVENTORY_LINE_HEIGHT: f32 = 48.0;
-const PIXEL_INVENTORY_VERTICAL_BLOCKSPACER: f32 = 42.0;
-const PIXEL_INVENTORY_HORIZONTAL_BLOCKSPACER: f32 = 31.0;
+const PIXEL_INVENTORY_VERTICAL_BLOCKSPACER: f32 = 56.0;
+const PIXEL_INVENTORY_HORIZONTAL_BLOCKSPACER: f32 = 79.0;
 
 pub fn detect_theme(image: &DynamicImage) -> Theme {
     let screen_scaling = if image.width() * 9 > image.height() * 16 {
@@ -398,18 +398,20 @@ pub fn inventory_image_to_inventory_names(
 
 // breaks on aspect ratios > 19:9
 pub fn extract_inventory(image: &DynamicImage, theme: &Theme) -> Vec<DynamicImage> {
-    let screen_scaling = if image.width() * 9 > image.height() * 16 {
+    let mut screen_scaling = if image.width() * 9 > image.height() * 16 {
         image.height() as f32 / 1080.0
     } else {
         image.width() as f32 / 1920.0
     };
+    screen_scaling = 1.0;
     let mut final_images: Vec<DynamicImage> = Vec::new();
+    println!("Screen scaling: {}", screen_scaling);
     image.save("input_inventory.png").unwrap();
 
     // crop four different parts hoizontaly starting at PIXEL_INVENTORY_YDISPLAY incorporate the vertical spacer
     for i in 0..4 {
-        let crop_width = PIXEL_INVENTORY_BLOCK * screen_scaling * 6.0
-            + PIXEL_INVENTORY_VERTICAL_BLOCKSPACER * 5.0;
+        let crop_width = PIXEL_INVENTORY_BLOCK * screen_scaling * 5.0 //TODO calculate amount of blocks and spacers
+            + PIXEL_INVENTORY_VERTICAL_BLOCKSPACER * 4.0;
         let partial_screenshot = image.crop_imm(
             PIXEL_INVENTORY_XDISPLAY as u32,
             PIXEL_INVENTORY_YDISPLAY as u32
@@ -480,7 +482,7 @@ pub fn filter_and_separate_inventory_blocks_from_inventory(
     // println!("Even: {}", total_even / total);
     // println!("Odd: {}", total_odd / total);
 
-    let block_per_line_count = 6;
+    let block_per_line_count = 5;
 
     let mut images = Vec::new();
 
@@ -489,9 +491,9 @@ pub fn filter_and_separate_inventory_blocks_from_inventory(
         //println!("Cropping block {}", i);
         let cropped = dynamic_image.crop_imm(
             i * (PIXEL_INVENTORY_BLOCK as u32 + PIXEL_INVENTORY_VERTICAL_BLOCKSPACER as u32),
-            0,
+            164,
             PIXEL_INVENTORY_BLOCK as u32,
-            PIXEL_INVENTORY_BLOCK as u32,
+            PIXEL_INVENTORY_BLOCK as u32 - 164,
         );
         cropped
             .save(format!(

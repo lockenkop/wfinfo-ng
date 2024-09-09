@@ -14,8 +14,10 @@ use notify::{watcher, RecursiveMode, Watcher};
 use xcap::Window;
 
 use wfinfo::{
-    database::Database,
-    ocr::{normalize_string, reward_image_to_reward_names, OCR},
+    database::{Database, Item},
+    ocr::{
+        inventory_image_to_inventory_names, normalize_string, reward_image_to_reward_names, OCR,
+    },
 };
 
 fn run_detection(capturer: &Window, db: &Database) {
@@ -29,6 +31,10 @@ fn run_detection(capturer: &Window, db: &Database) {
 
     let items: Vec<_> = text.map(|s| db.find_item(&s, None)).collect();
 
+    find_best_and_print(items);
+}
+
+fn find_best_and_print(items: Vec<Option<&Item>>) {
     let best = items
         .iter()
         .map(|item| {
@@ -52,9 +58,20 @@ fn run_detection(capturer: &Window, db: &Database) {
                 if Some(index) == best { "<----" } else { "" }
             );
         } else {
-            println!("Unknown item\n\tUnknown");
+            // println!("Unknown item\n\tUnknown");
         }
     }
+}
+
+fn inventory_scan(capturer: &Window, db: &Database) {
+    let frame = capturer.capture_image().unwrap();
+    let image = DynamicImage::ImageRgba8(frame);
+    let text = inventory_image_to_inventory_names(image, None);
+    println!("text before normalizing: {:#?}", text);
+    let text = text.iter().map(|s| normalize_string(s)).collect::<Vec<_>>();
+    println!("text after normalizing: {:#?}", text.iter());
+    let items: Vec<_> = text.iter().map(|s| db.find_item(&s, None)).collect();
+    find_best_and_print(items);
 }
 
 fn log_watcher(path: PathBuf, event_sender: mpsc::Sender<()>) {
@@ -168,6 +185,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     while let Ok(()) = event_receiver.recv() {
         println!("Capturing");
         run_detection(warframe_window, &db);
+        inventory_scan(warframe_window, &db)
     }
 
     drop(OCR.lock().unwrap().take());
